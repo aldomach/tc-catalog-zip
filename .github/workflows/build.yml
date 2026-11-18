@@ -1,0 +1,22 @@
+name: build
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: |
+          MZ="-DMINIZ_NO_STDIO -DMINIZ_NO_TIME -DMINIZ_NO_ARCHIVE_APIS"
+          i686-w64-mingw32-gcc -O2 -c miniz.c -o miniz32.o $MZ
+          i686-w64-mingw32-g++ -O2 -std=c++11 -c lstz.cpp -o lstz32.o $MZ
+          i686-w64-mingw32-g++ -shared -s -static -static-libgcc -static-libstdc++ -o lstz.wcx lstz32.o miniz32.o -Wl,--kill-at
+          x86_64-w64-mingw32-gcc -O2 -c miniz.c -o miniz64.o $MZ
+          x86_64-w64-mingw32-g++ -O2 -std=c++11 -c lstz.cpp -o lstz64.o $MZ
+          x86_64-w64-mingw32-g++ -shared -s -static -static-libgcc -static-libstdc++ -o lstz.wcx64 lstz64.o miniz64.o
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lstz
+          path: |
+            lstz.wcx
+            lstz.wcx64
